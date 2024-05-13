@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="text/javascript" src="brython.js"></script>
+    <script type="text/javascript" src="brython_stdlib.js"></script>
+    <link rel="stylesheet" type="text/css"  href="{{ url_for('static', filename='css/slide.css') }}">
+</head>
+<body onload="brython(1)">
+        <div class="slidecontainer">
+          <input type="range" min="0" max="100" step="0.5" value="20" class="slider" id="wspd_range">
+          <p>Surface Wind: <span id="wspd"></span> m/s</p>
+
+          <input type="range" min="0.1" max="25" step="0.20" value="2.4" class="slider" id="hlfwdt_range">
+          <p>Half-width: <span id="hlfwdt"></span> km</p>
+          <p>Rossby Number (45N): <span id="rossby"></span></p>
+
+          <input type="range" min="0" max="50" step="0.5" value="4" class="slider" id="lupper_range">
+          <p>L Upper (10^-4): <span id="lupper"></span></p>
+
+          <input type="range" min="0" max="50" step="0.5" value="10" class="slider" id="llower_range">
+          <p>L Lower (10^-4): <span id="llower"></span></p>
+
+          <input type="range" min="0" max="20" step="0.1" value="3.5" class="slider" id="intht_range">
+          <p>Interface Height: <span id="intht"> km</span></p>
+          <p>scorer: <span id="scorer"></span></p>
+
+          <input type="range" min="0" max="3" step="0.02" value="0.5" class="slider" id="lmaxhgt_range">
+          <p>Interface Height: <span id="maxhgt"> km</span></p>
+        </div>
+        <script type="text/python3">
+          from browser import document, ajax, window
+          import json
+          import warnings
+
+          def initial_value():
+            document["wspd"].text = str(document["wspd_range"].value)
+            document["hlfwdt"].text = str(document["hlfwdt_range"].value)
+            document["lupper"].text = str(document["lupper_range"].value)
+            document["llower"].text = str(document["llower_range"].value)
+            document["intht"].text = str(document["intht_range"].value)
+            document["maxhgt"].text = str(document["lmaxhgt_range"].value)
+            
+            req = ajax.ajax()
+            req.bind("complete", show_results_rossby)
+            req.open("POST", "/update_rossby", True)
+            req.set_header("content-type", "application/json")
+            data = json.dumps({"wspd_value": document["wspd_range"].value, "hlfwdt_value": document["hlfwdt_range"].value})
+            req.send(data)
+
+            req = ajax.ajax()
+            req.bind("complete", show_results_scorer)
+            req.open("POST", "/update_scorer", True)
+            req.set_header("content-type", "application/json")
+            data = json.dumps({"llower_value": document["llower_range"].value, "lupper_value": document["lupper_range"].value, "intht_value": document["intht_range"].value})
+            req.send(data)
+            
+          def show_results_rossby(response):
+            document["rossby"].text = response.text
+            
+          def show_results_scorer(response):
+            document["scorer"].text = response.text
+          
+          def updatewspd(event):
+            document["wspd"].text = event.target.value
+            req = ajax.ajax()
+            req.bind("complete", show_results_rossby)
+            req.open("POST", "/update_rossby", True)
+            req.set_header("content-type", "application/json")
+            data = json.dumps({"wspd_value": event.target.value, "hlfwdt_value": document["hlfwdt_range"].value})
+            req.send(data)
+
+          def updatehlfwdt(event):
+            document["hlfwdt"].text = event.target.value
+            req = ajax.ajax()
+            req.bind("complete", show_results_rossby)
+            req.open("POST", "/update_rossby", True)
+            req.set_header("content-type", "application/json")
+            data = json.dumps({"hlfwdt_value": event.target.value, "wspd_value": document["wspd_range"].value})
+            req.send(data)
+          
+          def updatelupper(event):
+            document["lupper"].text = event.target.value
+            req = ajax.ajax()
+            req.bind("complete", show_results_scorer)
+            req.open("POST", "/update_scorer", True)
+            req.set_header("content-type", "application/json")
+            data = json.dumps({"lupper_value": event.target.value, "llower_value": document["llower_range"].value, "intht_value": document["intht_range"].value})
+            req.send(data)
+          
+          def updatellower(event):
+            document["llower"].text = event.target.value
+            req = ajax.ajax()
+            req.bind("complete", show_results_scorer)
+            req.open("POST", "/update_scorer", True)
+            req.set_header("content-type", "application/json")
+            data = json.dumps({"llower_value": event.target.value, "lupper_value": document["lupper_range"].value, "intht_value": document["intht_range"].value})
+            req.send(data)
+          
+          def updateintht(event):
+            document["intht"].text = event.target.value
+            req = ajax.ajax()
+            req.bind("complete", show_results_scorer)
+            req.open("POST", "/update_scorer", True)
+            req.set_header("content-type", "application/json")
+            data = json.dumps({"intht_value": event.target.value, "lupper_value": document["lupper_range"].value, "llower_value": document["llower_range"].value})
+            req.send(data)
+          
+          def updatelmaxhgt(event):
+            document["maxhgt"].text = event.target.value
+
+          initial_value()
+          document["wspd_range"].bind("input", updatewspd)
+          document["hlfwdt_range"].bind("input", updatehlfwdt)
+          document["lupper_range"].bind("input", updatelupper)
+          document["llower_range"].bind("input", updatellower)
+          document["intht_range"].bind("input", updateintht)
+          document["lmaxhgt_range"].bind("input", updatelmaxhgt)
+      </script>
+</body>
+</html>
