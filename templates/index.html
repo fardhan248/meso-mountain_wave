@@ -86,6 +86,8 @@
             req.set_header("content-type", "application/json")
             data = json.dumps({"llower_value": document["llower_range"].value, "lupper_value": document["lupper_range"].value, "intht_value": document["intht_range"].value})
             req.send(data)
+
+            analyze_flow(None)
             
           def show_results_rossby(response):
             document["rossby"].text = response.text
